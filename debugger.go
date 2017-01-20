@@ -25,7 +25,7 @@ func New(host string) (Debugger, error) {
 	return chromeDebugger{
 		host: host,
 		ws:   conn,
-	}
+	}, nil
 }
 
 func (cd chromeDebugger) Version() (types.Version, error) {
@@ -47,7 +47,7 @@ func version(host string) (types.Version, error) {
 
 func info(host string) ([]types.Info, error) {
 	info := []types.Info{}
-	data, err := get(path.Join(host, "version"), &vers)
+	data, err := get(path.Join(host, "version"), &info)
 	if err != nil {
 		return info, err
 	}
