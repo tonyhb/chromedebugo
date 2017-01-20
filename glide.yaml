@@ -1,0 +1,4 @@
+package: github.com/tonyhb/chromedebugo
+import:
+- package: github.com/gorilla/websocket
+  version: v1.1.0

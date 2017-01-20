@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"path"
 
+	"github.com/gorilla/websocket"
 	"github.com/tonyhb/chromedebugo/types"
 )
 
