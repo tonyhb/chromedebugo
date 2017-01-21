@@ -47,3 +47,21 @@ func (c commandWrapper) MarshalJSON() ([]byte, error) {
 	}
 	return json.Marshal(data)
 }
+
+type Version struct {
+	Browser         string
+	ProtocolVersion string `json:"Protocol-Version"`
+	UserAgent       string `json:"User-Agent"`
+	V8Version       string `json:"V8-Version"`
+	WebkitVersion   string `json:"Webkit-Version"`
+}
+
+type Info struct {
+	Description          string `json:"description"`
+	DevtoolsFrontendURL  string `json:"devtoolsFrontendUrl"`
+	Id                   string `json:"id"` // todo: UUID package
+	Title                string `json:"title"`
+	Type                 string `json:"type"`
+	URL                  string `json:"url"`
+	WebsocketDebuggerURL string `json:"websocketDebuggerURL"`
+}
