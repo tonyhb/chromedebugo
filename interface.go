@@ -17,7 +17,7 @@ type SyncDebugger interface {
 
 	// Send dispatches a command to headless chrome and blocks until chrome
 	// sends us a Result or Error
-	Send(Command) (interface{}, error)
+	Send(Command) (Result, error)
 
 	// Batch dispatches mutiple commands in order to chrome and blocks until
 	// all responses for commands have been receivevd.

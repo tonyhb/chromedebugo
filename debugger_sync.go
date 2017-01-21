@@ -71,7 +71,7 @@ func (sd syncDebugger) Info() ([]Info, error) {
 	return info(sd.host)
 }
 
-func (sd syncDebugger) Send(cmd Command) (interface{}, error) {
+func (sd syncDebugger) Send(cmd Command) (Result, error) {
 	sd.lock.Lock()
 	defer sd.lock.Unlock()
 
@@ -79,15 +79,20 @@ func (sd syncDebugger) Send(cmd Command) (interface{}, error) {
 		ID:      sd.id,
 		Command: cmd,
 	}
+	sd.outstanding.Add(1)
 	if err := sd.conn.WriteJSON(wrapper); err != nil {
-		return nil, fmt.Errorf("error sending command to chrome: %s", err)
+		sd.outstanding.Done()
+		return Result{}, fmt.Errorf("error sending command to chrome: %s", err)
 	}
 
 	sd.id++
-
-	sd.outstanding.Add(1)
 	sd.outstanding.Wait()
-	return sd.responses[wrapper.ID], nil
+
+	if err, ok := sd.responses[wrapper.ID].(error); ok {
+		return Result{}, err
+	}
+
+	return sd.responses[wrapper.ID].(Result), nil
 }
 
 func (sd syncDebugger) Batch(commands []Command) ([]interface{}, error) {
@@ -101,11 +106,12 @@ func (sd syncDebugger) Batch(commands []Command) ([]interface{}, error) {
 			ID:      sd.id,
 			Command: cmd,
 		}
+		sd.outstanding.Add(1)
 		if err := sd.conn.WriteJSON(wrapper); err != nil {
+			sd.outstanding.Done()
 			return nil, fmt.Errorf("error sending command to chrome: %s", err)
 		}
 		sd.id++
-		sd.outstanding.Add(1)
 	}
 
 	sd.outstanding.Wait()
