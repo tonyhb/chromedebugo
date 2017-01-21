@@ -1,8 +1,12 @@
 package chromedebugo
 
-import "github.com/tonyhb/chromedebugo/types"
-
 type Debugger interface {
-	Version() (types.Version, error)
-	Info() ([]types.Info, error)
+	Version() (Version, error)
+	Info() ([]Info, error)
+
+	Send(Command) (int, error)
+
+	ErrorChan() chan Error
+	ResultChan() chan Result
+	CommandChan() chan Command
 }

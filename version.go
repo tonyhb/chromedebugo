@@ -1,4 +1,4 @@
-package types
+package chromedebugo
 
 type Version struct {
 	Browser         string
