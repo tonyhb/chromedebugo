@@ -113,7 +113,7 @@ func (sd syncDebugger) Batch(commands []Command) ([]interface{}, error) {
 	responses := make([]interface{}, len(commands), len(commands))
 	for i := 0; i < len(commands); i++ {
 		idx := startId + i
-		responses[idx] = sd.responses[idx]
+		responses[i] = sd.responses[idx]
 	}
 
 	return responses, nil
