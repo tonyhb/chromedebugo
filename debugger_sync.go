@@ -17,6 +17,8 @@ type syncDebugger struct {
 
 	// responses stores a map of all command responses keyed by their ID
 	responses map[int]interface{}
+	// commands stores a map of all sent comamnds by their ID
+	commands map[int]Command
 }
 
 func NewSync(host string) (*syncDebugger, error) {
@@ -30,6 +32,7 @@ func NewSync(host string) (*syncDebugger, error) {
 		lock:        &sync.Mutex{},
 		outstanding: &sync.WaitGroup{},
 		responses:   map[int]interface{}{},
+		commands:    map[int]Command{},
 	}
 
 	go func() {
@@ -38,7 +41,7 @@ func NewSync(host string) (*syncDebugger, error) {
 			if err != nil {
 				return
 			}
-			resp, err := decodeResponse(data)
+			resp, err := decodeResponse(data, debugger.commands)
 			if err != nil {
 				return
 			}
@@ -79,16 +82,21 @@ func (sd syncDebugger) Send(cmd Command) (Result, error) {
 		ID:      sd.id,
 		Command: cmd,
 	}
+	sd.commands[sd.id] = cmd
+
 	sd.outstanding.Add(1)
 	if err := sd.conn.WriteJSON(wrapper); err != nil {
 		sd.outstanding.Done()
 		return Result{}, fmt.Errorf("error sending command to chrome: %s", err)
 	}
-
 	sd.id++
 	sd.outstanding.Wait()
 
-	if err, ok := sd.responses[wrapper.ID].(error); ok {
+	if err, ok := sd.responses[wrapper.ID].(Error); ok {
+		cmd, ok := sd.commands[err.ID]
+		if ok {
+			err.Request = &cmd
+		}
 		return Result{}, err
 	}
 

@@ -5,7 +5,7 @@ import (
 	"fmt"
 )
 
-func decodeResponse(data []byte) (interface{}, error) {
+func decodeResponse(data []byte, commands map[int]Command) (interface{}, error) {
 	// data can be a JSON marshaled Result, Error
 	// or Command.
 	root := map[string]interface{}{}
@@ -18,6 +18,12 @@ func decodeResponse(data []byte) (interface{}, error) {
 		if err := json.Unmarshal(data, &errMsg); err != nil {
 			return nil, err
 		}
+
+		cmd, ok := commands[errMsg.ID]
+		if ok {
+			errMsg.Request = &cmd
+		}
+
 		return errMsg, nil
 	}
 
@@ -26,6 +32,12 @@ func decodeResponse(data []byte) (interface{}, error) {
 		if err := json.Unmarshal(data, &result); err != nil {
 			return nil, err
 		}
+
+		cmd, ok := commands[result.ID]
+		if ok {
+			result.Request = &cmd
+		}
+
 		return result, nil
 	}
 

@@ -4,12 +4,22 @@ import "fmt"
 
 type asyncDebugger struct {
 	*debugger
+	// responses stores a map of all command responses keyed by their ID
+	responses map[int]interface{}
+	// commands stores a map of all sent comamnds by their ID
+	commands map[int]Command
 }
 
 func NewAsync(host string) (*asyncDebugger, error) {
 	base, err := newBaseDebugger(host)
 	if err != nil {
 		return nil, err
+	}
+
+	debugger := &asyncDebugger{
+		debugger:  base,
+		responses: map[int]interface{}{},
+		commands:  map[int]Command{},
 	}
 
 	// Asynchronous debugging is simple: set up a goroutine which listens
@@ -23,14 +33,16 @@ func NewAsync(host string) (*asyncDebugger, error) {
 			if err != nil {
 				return
 			}
-			resp, err := decodeResponse(data)
+			resp, err := decodeResponse(data, debugger.commands)
 			if err != nil {
 				return
 			}
 			switch resp.(type) {
 			case Error:
+				debugger.responses[resp.(Error).ID] = resp
 				base.errChan <- resp.(Error)
 			case Result:
+				debugger.responses[resp.(Result).ID] = resp
 				base.resChan <- resp.(Result)
 			case Command:
 				base.cmdChan <- resp.(Command)
@@ -38,7 +50,7 @@ func NewAsync(host string) (*asyncDebugger, error) {
 		}
 	}()
 
-	return &asyncDebugger{base}, nil
+	return debugger, nil
 }
 
 // Version returns the chrome version inforamation from /json/version
@@ -59,6 +71,7 @@ func (ad *asyncDebugger) Send(cmd Command) (int, error) {
 		ID:      ad.id,
 		Command: cmd,
 	}
+	ad.commands[ad.id] = cmd
 
 	if err := ad.conn.WriteJSON(wrapper); err != nil {
 		return 0, fmt.Errorf("error sending command to chrome: %s", err)

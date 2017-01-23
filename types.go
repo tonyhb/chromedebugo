@@ -13,16 +13,29 @@ type Command struct {
 type Result struct {
 	ID     int                    `json:"id"`
 	Result map[string]interface{} `json:"result"`
+	// If possible, the request that caused this result
+	Request *Command `json:"request,omitempty"`
 }
 
 type Error struct {
 	ErrorDetail ErrorDetail `json:"error"`
 	ID          int         `json:"id"`
+	// If possible, the request that caused this error
+	Request *Command `json:"request,omitempty"`
 }
 
 func (e Error) Error() string {
+	if e.Request != nil {
+		return fmt.Sprintf(
+			"request %d (%s) failed with code '%d': %s",
+			e.ID,
+			e.Request,
+			e.ErrorDetail.Code,
+			e.ErrorDetail.Message,
+		)
+	}
 	return fmt.Sprintf(
-		"request '%d' failed with code '%d': %s",
+		"request %d failed with code '%d': %s",
 		e.ID,
 		e.ErrorDetail.Code,
 		e.ErrorDetail.Message,
